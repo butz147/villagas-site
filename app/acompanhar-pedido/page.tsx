@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SiteHeader } from '../components/SiteHeader';
 import { SiteFooter } from '../components/SiteFooter';
@@ -32,7 +32,7 @@ type TipoMensagem = 'sucesso' | 'erro' | '';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
-export default function AcompanharPedidoPage() {
+function AcompanharPedidoContent() {
   const searchParams = useSearchParams();
   const intervaloRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -133,24 +133,26 @@ export default function AcompanharPedidoPage() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.erro || 'Não foi possível localizar o pedido.');
+      if (!response.ok || data?.ok === false) {
+        throw new Error(data?.erro || 'Não foi possível localizar o pedido.');
       }
+
+      const dados = data?.dados || data;
 
       setPedido((pedidoAnterior) => {
         if (
           pedidoAnterior &&
-          pedidoAnterior.status !== data.pedido.status &&
+          pedidoAnterior.status !== dados.pedido.status &&
           document.visibilityState === 'visible'
         ) {
-          setMensagem(`Status atualizado: ${data.pedido.status_display}`);
+          setMensagem(`Status atualizado: ${dados.pedido.status_display}`);
           setTipoMensagem('sucesso');
         }
-        return data.pedido;
+        return dados.pedido;
       });
 
       try {
-        localStorage.setItem('villagas_ultimo_pedido_id', String(data.pedido.id));
+        localStorage.setItem('villagas_ultimo_pedido_id', String(dados.pedido.id));
         localStorage.setItem('villagas_ultimo_pedido_telefone', telefoneValor);
       } catch (error) {
         console.error('Erro ao salvar dados do pedido:', error);
@@ -158,7 +160,7 @@ export default function AcompanharPedidoPage() {
 
       if (!silencioso) {
         setTipoMensagem('sucesso');
-        setMensagem(`Pedido #${data.pedido.id} localizado com sucesso.`);
+        setMensagem(`Pedido #${dados.pedido.id} localizado com sucesso.`);
       }
     } catch (error: unknown) {
       if (!silencioso) {
@@ -633,5 +635,29 @@ export default function AcompanharPedidoPage() {
       <SiteFooter />
       <WhatsAppButton fixed />
     </main>
+  );
+}
+
+export default function AcompanharPedidoPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#fff7ed,_#fff1f2_40%,_#fff7ed)]">
+          <SiteHeader
+            showPedidoButton={true}
+            showAcompanharButton={false}
+            showBackToHome={true}
+          />
+          <section className="mx-auto max-w-7xl px-5 py-16 md:px-6">
+            <div className="rounded-[30px] border border-orange-200 bg-white p-8 text-center shadow-sm">
+              <p className="text-lg font-black text-zinc-900">Carregando acompanhamento...</p>
+            </div>
+          </section>
+          <SiteFooter />
+        </main>
+      }
+    >
+      <AcompanharPedidoContent />
+    </Suspense>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SiteHeader } from '../components/SiteHeader';
 import { SiteFooter } from '../components/SiteFooter';
@@ -17,7 +17,7 @@ type ResumoPedido = {
   cidade: string;
 };
 
-export default function PedidoSucessoPage() {
+function PedidoSucessoContent() {
   const searchParams = useSearchParams();
 
   const pedidoId = searchParams.get('pedido_id') || '';
@@ -210,5 +210,29 @@ export default function PedidoSucessoPage() {
       <SiteFooter />
       <WhatsAppButton fixed />
     </main>
+  );
+}
+
+export default function PedidoSucessoPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#fff7ed,_#fff1f2_40%,_#fff7ed)]">
+          <SiteHeader
+            showPedidoButton={false}
+            showAcompanharButton={true}
+            showBackToHome={true}
+          />
+          <section className="mx-auto max-w-4xl px-5 py-16 md:px-6">
+            <div className="rounded-[32px] border border-green-200 bg-white p-8 text-center shadow-sm">
+              <p className="text-lg font-black text-zinc-900">Carregando confirmação...</p>
+            </div>
+          </section>
+          <SiteFooter />
+        </main>
+      }
+    >
+      <PedidoSucessoContent />
+    </Suspense>
   );
 }
