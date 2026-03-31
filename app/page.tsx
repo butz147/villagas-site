@@ -9,7 +9,7 @@ import { MobileCTA } from './components/MobileCTA';
 import { UltimoPedidoButton } from './components/UltimoPedidoButton';
 import { ProdutosSection } from './components/ProdutosSection';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 type CidadeSlug = 'jacarei' | 'sao-jose-dos-campos';
 
