@@ -224,12 +224,10 @@ function formatCurrencyBRL(valor: number) {
 }
 
 async function parseJsonSafely(response: Response) {
-  const texto = await response.text();
+  const data = await response.json();
 
-  try {
-    return JSON.parse(texto);
-  } catch {
-    throw new Error(`Resposta não é JSON. Início: ${texto.slice(0, 120)}`);
+  if (!response.ok) {
+    throw new Error(data.erro || data.detail || 'Erro ao criar pedido');
   }
 }
 
