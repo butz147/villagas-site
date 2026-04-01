@@ -224,7 +224,7 @@ function formatCurrencyBRL(valor: number) {
 }
 
 async function parseJsonSafely(response: Response) {
-  const data = await response.json();
+  const data: any = await response.json();
 
   if (!response.ok) {
     throw new Error(data.erro || data.detail || 'Erro ao criar pedido');
@@ -383,7 +383,7 @@ export default function PedidoPage() {
         setTipoMensagem('');
 
         const response = await fetch(`${API_URL}/api/produtos/?cidade=${form.cidade}`);
-        const data = await parseJsonSafely(response);
+        const data: any = await response.json();
 
         if (!response.ok || data?.ok === false) {
           throw new Error(data?.erro || 'Não foi possível carregar os produtos.');
@@ -455,7 +455,7 @@ export default function PedidoPage() {
       setBuscandoCep(true);
 
       const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
-      const data = await response.json();
+      const data: any = await response.json();
 
       if (data.erro) {
         setTipoMensagem('erro');
@@ -711,7 +711,7 @@ export default function PedidoPage() {
         body: JSON.stringify(payload),
       });
 
-      const data = await parseJsonSafely(response);
+      const data: any = await response.json();
 
       if (!response.ok || data?.ok === false) {
         setTipoCupom('erro');
@@ -789,7 +789,7 @@ export default function PedidoPage() {
         body: JSON.stringify(payload),
       });
 
-      const data = await parseJsonSafely(response);
+      const data: any = await response.json();
 
       if (!response.ok || data?.ok === false) {
         throw new Error(data?.erro || 'Erro ao enviar pedido.');
