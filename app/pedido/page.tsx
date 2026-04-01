@@ -707,7 +707,7 @@ export default function PedidoPage() {
         validar_apenas: true,
       };
 
-      const response = await fetch(`${API_URL}/api/pedidos/criar-pedido-site/`, {
+      const response = await fetch(`${API_URL}/api/pedidos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
