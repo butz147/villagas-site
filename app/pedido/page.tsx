@@ -783,7 +783,7 @@ export default function PedidoPage() {
         cupom: form.cupom,
       };
 
-      const response = await fetch('/api/pedidos', {
+      const response = await fetch('/api/pedidos/criar-pedido-site/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

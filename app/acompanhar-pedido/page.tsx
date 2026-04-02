@@ -30,7 +30,7 @@ type Pedido = {
 
 type TipoMensagem = 'sucesso' | 'erro' | '';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const API_URL = 'https://admin.villagaz.com.br';
 
 function AcompanharPedidoContent() {
   const searchParams = useSearchParams();
