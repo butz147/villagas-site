@@ -754,7 +754,6 @@ export default function PedidoPage() {
     if (!validarFormulario()) return;
 
     if (!produtoSelecionado) {
-      setTipoMensagem('erro');
       setMensagem('Produto não encontrado.');
       return;
     }
@@ -783,9 +782,9 @@ export default function PedidoPage() {
         cupom: form.cupom,
       };
 
-      const response = await fetch('/api/pedidos/criar-pedido-site/', {
+      const response = await fetch('/api/pedidos/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+              const response = await fetch('/api/pedidos/', {
         body: JSON.stringify(payload),
       });
 
