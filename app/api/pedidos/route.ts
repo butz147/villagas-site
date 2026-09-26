@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = 'http://159.223.111.33:8000';
+const BACKEND_URL = 'https://admin.villagaz.com.br';
 
 export const dynamic = 'force-dynamic';
 

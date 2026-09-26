@@ -5,19 +5,19 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://159.223.111.33:8000/api/:path*',
+        destination: 'https://admin.villagaz.com.br/api/:path*',
       },
       {
         source: '/produtos/:path*',
-        destination: 'http://159.223.111.33:8000/produtos/:path*',
+        destination: 'https://admin.villagaz.com.br/produtos/:path*',
       },
       {
         source: '/static/:path*',
-        destination: 'http://159.223.111.33:8000/static/:path*',
+        destination: 'https://admin.villagaz.com.br/static/:path*',
       },
       {
         source: '/media/:path*',
-        destination: 'http://159.223.111.33:8000/media/:path*',
+        destination: 'https://admin.villagaz.com.br/media/:path*',
       },
     ];
   },

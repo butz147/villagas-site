@@ -188,17 +188,8 @@ function getImagemProduto(produto: Produto) {
   return getImagemFallback(produto.nome);
 }
 
-function calcularDescontoLocal(cupom: string, subtotal: number) {
-  const codigo = cupom.trim().toUpperCase();
-
-  if (codigo === 'PRIMEIRA10') {
-    return Math.min(subtotal * 0.1, subtotal);
-  }
-
-  if (codigo === 'GAS5') {
-    return Math.min(5, subtotal);
-  }
-
+function calcularDescontoLocal(_cupom: string, _subtotal: number) {
+  // Cupons foram desativados no site; o desconto só vem confirmado pelo backend.
   return 0;
 }
 
@@ -754,6 +745,7 @@ export default function PedidoPage() {
     if (!validarFormulario()) return;
 
     if (!produtoSelecionado) {
+      setTipoMensagem('erro');
       setMensagem('Produto não encontrado.');
       return;
     }
@@ -784,7 +776,7 @@ export default function PedidoPage() {
 
       const response = await fetch('/api/pedidos/', {
         method: 'POST',
-              const response = await fetch('/api/pedidos/', {
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
@@ -1273,43 +1265,6 @@ export default function PedidoPage() {
 
                     <div>
                       <label className="mb-2 block text-sm font-black text-zinc-800">
-                        Cupom de desconto
-                      </label>
-
-                      <div className="flex flex-col gap-3 sm:flex-row">
-                        <input
-                          type="text"
-                          name="cupom"
-                          placeholder="Ex: PRIMEIRA10"
-                          value={form.cupom}
-                          onChange={handleChange}
-                          className="w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3.5 uppercase text-zinc-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                        />
-                        <button
-                          type="button"
-                          onClick={validarCupomAntes}
-                          disabled={validandoCupom || !form.cupom.trim()}
-                          className="rounded-2xl bg-zinc-900 px-5 py-3 font-black text-white transition hover:bg-black disabled:opacity-60"
-                        >
-                          {validandoCupom ? 'Validando...' : 'Validar'}
-                        </button>
-                      </div>
-
-                      {mensagemCupom && (
-                        <div
-                          className={`mt-3 rounded-2xl border px-4 py-3 text-sm font-black ${
-                            tipoCupom === 'sucesso'
-                              ? 'border-green-200 bg-green-50 text-green-700'
-                              : 'border-red-200 bg-red-50 text-red-700'
-                          }`}
-                        >
-                          {mensagemCupom}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-black text-zinc-800">
                         Observações do pedido
                       </label>
                       <textarea
@@ -1396,20 +1351,6 @@ export default function PedidoPage() {
                   <div className="rounded-2xl bg-white/10 p-4">
                     <p className="text-sm text-zinc-300">Subtotal</p>
                     <p className="mt-1 text-2xl font-black text-white">{subtotalFormatado}</p>
-                  </div>
-
-                  <div className="rounded-2xl bg-white/10 p-4">
-                    <p className="text-sm text-zinc-300">Cupom aplicado</p>
-                    <p className="mt-1 text-xl font-black text-white">
-                      {cupomAplicado || form.cupom.trim().toUpperCase() || 'Nenhum'}
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl bg-white/10 p-4">
-                    <p className="text-sm text-zinc-300">Desconto</p>
-                    <p className="mt-1 text-2xl font-black text-green-400">
-                      - {descontoFormatado}
-                    </p>
                   </div>
 
                   <div className="rounded-2xl bg-white/10 p-4">
