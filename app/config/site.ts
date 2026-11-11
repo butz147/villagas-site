@@ -16,6 +16,7 @@ export const SITE_CONFIG = {
       cidade: 'São José dos Campos',
       endereco: 'Rua Aparecida Santos, 1028 - Dom Bosco, São José dos Campos - SP',
       mapa: 'https://maps.app.goo.gl/E4tck43pcbQyD4LK6',
+      whatsapp: '5512991891312', // robô de pedidos da loja Dom Bosco
     },
   ],
 };

@@ -24,6 +24,14 @@ type Produto = {
   imagem_url?: string;
 };
 
+// Bairro da lista que a loja atende, com o preço entregue de cada produto (id -> preço)
+type Bairro = {
+  nome: string;
+  precos: Record<string, string>;
+};
+
+const BAIRRO_FORA = '__fora__';
+
 type FormData = {
   nome: string;
   telefone: string;
@@ -193,6 +201,27 @@ function calcularDescontoLocal(_cupom: string, _subtotal: number) {
   return 0;
 }
 
+function normalizarTexto(valor: string) {
+  return valor
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+// Acha na lista o bairro digitado antes ou vindo do CEP (ignora acento e maiúscula)
+function bairroDaLista(valor: string, bairros: Bairro[]) {
+  if (!valor) return '';
+  const alvo = normalizarTexto(valor);
+  return bairros.find((b) => normalizarTexto(b.nome) === alvo)?.nome || '';
+}
+
+// No bairro fora da lista o cliente fala com o WhatsApp da loja da cidade dele
+function whatsappDaCidade(valor: string) {
+  const loja = SITE_CONFIG.lojas.find((l) => l.cidade === labelCidade(valor));
+  return (loja && 'whatsapp' in loja && loja.whatsapp) || SITE_CONFIG.whatsappNumero;
+}
+
 function labelCidade(valor: string) {
   if (valor === 'jacarei') return 'Jacareí';
   if (valor === 'sao-jose-dos-campos') return 'São José dos Campos';
@@ -226,6 +255,7 @@ export default function PedidoPage() {
   const router = useRouter();
 
   const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [bairros, setBairros] = useState<Bairro[]>([]);
   const [carregandoProdutos, setCarregandoProdutos] = useState(false);
   const [buscandoCep, setBuscandoCep] = useState(false);
 
@@ -271,6 +301,7 @@ export default function PedidoPage() {
   const ruaRef = useRef<HTMLInputElement | null>(null);
   const numeroRef = useRef<HTMLInputElement | null>(null);
   const bairroRef = useRef<HTMLInputElement | null>(null);
+  const bairroListaRef = useRef<HTMLSelectElement | null>(null);
   const quantidadeRef = useRef<HTMLInputElement | null>(null);
   const pagamentoRef = useRef<HTMLSelectElement | null>(null);
 
@@ -360,6 +391,7 @@ export default function PedidoPage() {
     async function carregarProdutos() {
       if (!form.cidade) {
         setProdutos([]);
+        setBairros([]);
         setLojaAberta(null);
         setHorarioAbertura('');
         setHorarioFechamento('');
@@ -383,7 +415,16 @@ export default function PedidoPage() {
         const dados = data?.dados || data;
         const lista = Array.isArray(dados.produtos) ? dados.produtos : [];
 
+        const listaBairros: Bairro[] = Array.isArray(dados.bairros) ? dados.bairros : [];
+
         setProdutos(lista);
+        setBairros(listaBairros);
+        if (listaBairros.length > 0) {
+          setForm((prev) => ({
+            ...prev,
+            bairro: prev.bairro === BAIRRO_FORA ? prev.bairro : bairroDaLista(prev.bairro, listaBairros),
+          }));
+        }
         setLojaAberta(dados.loja_aberta ?? null);
         setHorarioAbertura(dados.horario_abertura || '');
         setHorarioFechamento(dados.horario_fechamento || '');
@@ -457,7 +498,9 @@ export default function PedidoPage() {
       setForm((prev) => ({
         ...prev,
         rua: data.logradouro || prev.rua,
-        bairro: data.bairro || prev.bairro,
+        bairro: bairros.length > 0
+          ? bairroDaLista(data.bairro || '', bairros) || prev.bairro
+          : data.bairro || prev.bairro,
       }));
 
       setTipoMensagem('');
@@ -538,7 +581,7 @@ export default function PedidoPage() {
   function montarEnderecoCompleto() {
     const partes = [
       form.rua && form.numero ? `${form.rua}, ${form.numero}` : form.rua || '',
-      form.bairro ? `Bairro ${form.bairro}` : '',
+      form.bairro && form.bairro !== BAIRRO_FORA ? `Bairro ${form.bairro}` : '',
       form.cep ? `CEP ${form.cep}` : '',
       form.complemento ? `Complemento ${form.complemento}` : '',
       form.cidade ? `Cidade ${labelCidade(form.cidade)}` : '',
@@ -596,8 +639,17 @@ export default function PedidoPage() {
       return irParaCampo(numeroRef, 'Informe o número.');
     }
 
+    if (form.bairro === BAIRRO_FORA) {
+      return irParaCampo(
+        bairroListaRef,
+        'Ainda não entregamos nesse bairro pelo site. Chame a gente no WhatsApp que verificamos pra você.'
+      );
+    }
+
     if (!form.bairro.trim()) {
-      return irParaCampo(bairroRef, 'Informe o bairro.');
+      return bairros.length > 0
+        ? irParaCampo(bairroListaRef, 'Selecione o bairro.')
+        : irParaCampo(bairroRef, 'Informe o bairro.');
     }
 
     if (!form.produto.trim()) {
@@ -641,10 +693,20 @@ export default function PedidoPage() {
     return produtos.find((produto) => String(produto.id) === form.produto) || null;
   }, [produtos, form.produto]);
 
+  const bairroSelecionado = useMemo(() => {
+    return bairros.find((b) => b.nome === form.bairro) || null;
+  }, [bairros, form.bairro]);
+
+  function precoDoProduto(produto: Produto) {
+    return Number(bairroSelecionado?.precos[String(produto.id)] || produto.preco_venda || 0);
+  }
+
   const precoNumero = useMemo(() => {
     if (!produtoSelecionado) return 0;
-    return Number(produtoSelecionado.preco_venda || 0);
-  }, [produtoSelecionado]);
+    return Number(
+      bairroSelecionado?.precos[String(produtoSelecionado.id)] || produtoSelecionado.preco_venda || 0
+    );
+  }, [produtoSelecionado, bairroSelecionado]);
 
   const quantidadeNumero = useMemo(() => {
     return Number(form.quantidade || 0);
@@ -767,6 +829,7 @@ export default function PedidoPage() {
         telefone: form.telefone,
         cidade: form.cidade,
         endereco: montarEnderecoCompleto(),
+        ...(bairros.length > 0 ? { bairro: form.bairro } : {}),
         produto_id: produtoSelecionado.id,
         quantidade: Number(form.quantidade || 1),
         forma_pagamento: form.forma_pagamento,
@@ -1084,15 +1147,47 @@ export default function PedidoPage() {
 
                   <div>
                     <label className="mb-2 block text-sm font-black text-zinc-800">Bairro</label>
-                    <input
-                      ref={bairroRef}
-                      type="text"
-                      name="bairro"
-                      placeholder="Nome do bairro"
-                      value={form.bairro}
-                      onChange={handleChange}
-                      className="w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3.5 text-zinc-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                    />
+                    {bairros.length > 0 ? (
+                      <select
+                        ref={bairroListaRef}
+                        name="bairro"
+                        value={form.bairro}
+                        onChange={handleChange}
+                        className="w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3.5 text-zinc-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                      >
+                        <option value="">Selecione o bairro</option>
+                        {bairros.map((b) => (
+                          <option key={b.nome} value={b.nome}>
+                            {b.nome}
+                          </option>
+                        ))}
+                        <option value={BAIRRO_FORA}>Meu bairro não está na lista</option>
+                      </select>
+                    ) : (
+                      <input
+                        ref={bairroRef}
+                        type="text"
+                        name="bairro"
+                        placeholder="Nome do bairro"
+                        value={form.bairro}
+                        onChange={handleChange}
+                        className="w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3.5 text-zinc-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                      />
+                    )}
+                    {form.bairro === BAIRRO_FORA && (
+                      <p className="mt-2 text-sm font-bold text-red-600">
+                        Ainda não entregamos nesse bairro pelo site.{' '}
+                        <a
+                          href={`https://wa.me/${whatsappDaCidade(form.cidade)}?text=${encodeURIComponent('Olá! Quero fazer um pedido, meu bairro não estava na lista do site.')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline"
+                        >
+                          Chame a gente no WhatsApp
+                        </a>{' '}
+                        que verificamos pra você.
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -1177,7 +1272,7 @@ export default function PedidoPage() {
                       ) : (
                         <div className="grid gap-4 md:grid-cols-2">
                           {produtos.map((produto) => {
-                            const preco = formatCurrencyBRL(Number(produto.preco_venda || 0));
+                            const preco = formatCurrencyBRL(precoDoProduto(produto));
                             const selecionado = String(produto.id) === form.produto;
 
                             return (
