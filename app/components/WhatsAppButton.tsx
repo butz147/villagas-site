@@ -4,6 +4,8 @@ type WhatsAppButtonProps = {
   texto?: string;
   className?: string;
   fixed?: boolean;
+  numero?: string;
+  mensagem?: string;
 };
 
 function WhatsAppIcon({ className = 'h-5 w-5' }: { className?: string }) {
@@ -23,10 +25,10 @@ export function WhatsAppButton({
   texto = 'WhatsApp',
   className = '',
   fixed = false,
+  numero = SITE_CONFIG.whatsappNumero,
+  mensagem = SITE_CONFIG.whatsappTexto,
 }: WhatsAppButtonProps) {
-  const href = `https://wa.me/${SITE_CONFIG.whatsappNumero}?text=${encodeURIComponent(
-    SITE_CONFIG.whatsappTexto
-  )}`;
+  const href = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
 
   const fixedClasses = fixed ? 'fixed bottom-5 right-5 z-40' : '';
 

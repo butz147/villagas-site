@@ -11,6 +11,7 @@ export const SITE_CONFIG = {
       cidade: 'Jacareí',
       endereco: 'Rod. Geraldo Scavone, 1769 - Jardim Califórnia, Jacareí - SP',
       mapa: 'https://maps.app.goo.gl/ryHHF1TzzEURe2QP7',
+      whatsapp: '5512992215075',
     },
     {
       cidade: 'São José dos Campos',

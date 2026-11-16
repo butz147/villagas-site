@@ -18,17 +18,19 @@ export function SiteFooter() {
         <div>
           <h4 className="font-black text-zinc-900">Contato</h4>
           <ul className="mt-3 space-y-2 text-sm text-zinc-600">
-            <li>
-              WhatsApp:{' '}
-              <a
-                href={`https://wa.me/${SITE_CONFIG.whatsappNumero}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-orange-600 hover:underline"
-              >
-                {SITE_CONFIG.telefone}
-              </a>
-            </li>
+            {SITE_CONFIG.lojas.map((loja) => (
+              <li key={loja.cidade}>
+                WhatsApp {loja.cidade}:{' '}
+                <a
+                  href={`https://wa.me/${loja.whatsapp}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-orange-600 hover:underline"
+                >
+                  {`(${loja.whatsapp.slice(2, 4)}) ${loja.whatsapp.slice(4, 9)}-${loja.whatsapp.slice(9)}`}
+                </a>
+              </li>
+            ))}
             <li>
               Telefone:{' '}
               <a

@@ -216,10 +216,16 @@ function bairroDaLista(valor: string, bairros: Bairro[]) {
   return bairros.find((b) => normalizarTexto(b.nome) === alvo)?.nome || '';
 }
 
-// No bairro fora da lista o cliente fala com o WhatsApp da loja da cidade dele
+// WhatsApp da loja da cidade escolhida (São José cai no robô de pedidos da loja Dom Bosco)
 function whatsappDaCidade(valor: string) {
   const loja = SITE_CONFIG.lojas.find((l) => l.cidade === labelCidade(valor));
-  return (loja && 'whatsapp' in loja && loja.whatsapp) || SITE_CONFIG.whatsappNumero;
+  return loja?.whatsapp || SITE_CONFIG.whatsappNumero;
+}
+
+// Quem chega pelo anúncio do Google (?origem=google) manda a frase que o ERP marca como anúncio
+function getOrigemAnuncio() {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('origem') === 'google';
 }
 
 function labelCidade(valor: string) {
@@ -260,6 +266,7 @@ export default function PedidoPage() {
   const [buscandoCep, setBuscandoCep] = useState(false);
 
   const [lojaAberta, setLojaAberta] = useState<boolean | null>(null);
+  const [veioDoAnuncio, setVeioDoAnuncio] = useState(false);
   const [horarioAbertura, setHorarioAbertura] = useState('');
   const [horarioFechamento, setHorarioFechamento] = useState('');
   const [nomeLoja, setNomeLoja] = useState('');
@@ -304,6 +311,10 @@ export default function PedidoPage() {
   const bairroListaRef = useRef<HTMLSelectElement | null>(null);
   const quantidadeRef = useRef<HTMLInputElement | null>(null);
   const pagamentoRef = useRef<HTMLSelectElement | null>(null);
+
+  useEffect(() => {
+    setVeioDoAnuncio(getOrigemAnuncio());
+  }, []);
 
   useEffect(() => {
     const ultimoPedidoId = localStorage.getItem('villagas_ultimo_pedido_id');
@@ -925,6 +936,16 @@ export default function PedidoPage() {
         )}`
       : '/acompanhar-pedido';
 
+  const whatsappLoja = whatsappDaCidade(form.cidade);
+  const ehSaoJose = form.cidade === 'sao-jose-dos-campos';
+  const mensagemWhatsapp = ehSaoJose
+    ? veioDoAnuncio
+      ? 'Oi! Vi o anúncio e quero pedir gás'
+      : 'Oi! Quero pedir gás'
+    : SITE_CONFIG.whatsappTexto;
+  const produtoGas = produtos.find((p) => normalizarTexto(p.nome).includes('gas'));
+  const precoGas = produtoGas ? Number(produtoGas.preco_venda) : 0;
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#fff7ed,_#fff1f2_40%,_#fff7ed)]">
       <SiteHeader
@@ -947,6 +968,26 @@ export default function PedidoPage() {
           <p className="mt-4 max-w-2xl text-base leading-7 text-white/90 md:text-lg md:leading-8">
             Selecione sua cidade, escolha o produto, informe o endereço e acompanhe o pedido depois.
           </p>
+
+          {ehSaoJose && (
+            <div className="mt-6 flex max-w-2xl flex-col gap-4 rounded-[26px] border border-white/25 bg-white/15 p-5 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xl font-black">
+                  {precoGas > 0 ? `Gás entregue por ${formatCurrencyBRL(precoGas)}` : 'Gás e água na sua porta'}
+                </p>
+                <p className="mt-1 text-sm leading-6 text-white/90">
+                  Prefere pelo WhatsApp? Manda uma mensagem que a gente anota seu pedido na hora
+                  {lojaAberta === false ? ' e entrega assim que abrir' : ''}.
+                </p>
+              </div>
+              <WhatsAppButton
+                texto="Pedir pelo WhatsApp"
+                numero={whatsappLoja}
+                mensagem={mensagemWhatsapp}
+                className="shrink-0 justify-center shadow-none"
+              />
+            </div>
+          )}
         </div>
       </section>
 
@@ -1471,6 +1512,8 @@ export default function PedidoPage() {
 
               <WhatsAppButton
                 texto="Falar no WhatsApp"
+                numero={whatsappLoja}
+                mensagem={mensagemWhatsapp}
                 className="mt-5 rounded-2xl bg-zinc-900 px-5 py-3 text-white shadow-none hover:scale-100 hover:bg-black"
               />
             </div>
@@ -1480,7 +1523,7 @@ export default function PedidoPage() {
 
       <div className="h-24 md:hidden" />
       <SiteFooter />
-      <WhatsAppButton fixed />
+      <WhatsAppButton fixed numero={whatsappLoja} mensagem={mensagemWhatsapp} />
       <CheckoutBar
         total={totalFormatado}
         disabled={loading || carregandoProdutos || buscandoCep || lojaAberta === false}
